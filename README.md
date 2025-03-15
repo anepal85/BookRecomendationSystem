@@ -1,4 +1,3 @@
-```markdown
 # Semantic Book Recommender
 
 This project is a semantic book recommendation system that uses natural language processing (NLP) to recommend books based on a user's query, selected category, and desired emotional tone. The system leverages a custom embedding model and a vector database to find semantically similar books.
