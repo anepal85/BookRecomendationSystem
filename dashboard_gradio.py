@@ -3,13 +3,25 @@ import numpy as np
 from dotenv import load_dotenv
 
 from langchain_community.document_loaders import TextLoader
-from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
+from sentence_transformers import SentenceTransformer
 from langchain_chroma import Chroma
+from langchain.embeddings.base import Embeddings
 
 import gradio as gr
 
 load_dotenv()
+
+# Custom embedding function
+class SentenceTransformerEmbeddings(Embeddings):
+    def __init__(self, model_name='all-MiniLM-L6-v2'):
+        self.model = SentenceTransformer(model_name)
+
+    def embed_documents(self, texts):
+        return self.model.encode(texts).tolist()
+
+    def embed_query(self, text):
+        return self.model.encode(text).tolist()
 
 books = pd.read_csv("books_with_emotions.csv")
 books["large_thumbnail"] = books["thumbnail"] + "&fife=w800"
@@ -19,11 +31,11 @@ books["large_thumbnail"] = np.where(
     books["large_thumbnail"],
 )
 
-raw_documents = TextLoader("tagged_description.txt").load()
+raw_documents = TextLoader("tagged_description.txt", encoding="utf-8").load()
 text_splitter = CharacterTextSplitter(separator="\n", chunk_size=0, chunk_overlap=0)
 documents = text_splitter.split_documents(raw_documents)
-db_books = Chroma.from_documents(documents, OpenAIEmbeddings())
-
+embedding_function = SentenceTransformerEmbeddings()
+db_books = Chroma.from_documents(documents, embedding=embedding_function)
 
 def retrieve_semantic_recommendations(
         query: str,
